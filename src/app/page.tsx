@@ -33,32 +33,18 @@ export default function HomePage() {
         </Link>
       </section>
 
-      <section className="max-w-4xl mx-auto px-6 pb-20 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="max-w-4xl mx-auto px-6 pb-20 grid grid-cols-1 gap-6">
         {[
-          {
-            title: '슬로건 도안',
-            desc: '텍스트 입력 + AI 배경으로 응원봉 피켓, 현수막 도안 완성',
-            icon: '✏️',
-            price: '2,000원~',
-          },
-          {
-            title: '포토카드 도안',
-            desc: '사진 업로드 후 AI 배경·테두리로 55×85mm 포토카드 도안 완성',
-            icon: '🃏',
-            price: '2,000원~',
-          },
           {
             title: '유니폼 일러스트',
             desc: '팀 컬러·번호·이름 입력으로 아크릴·스티커용 유니폼 일러스트 생성',
             icon: '⚾',
-            price: '3,000원~',
           },
         ].map((item) => (
           <div key={item.title} className="border rounded-2xl p-6 text-left hover:shadow-md transition-shadow">
             <div className="text-3xl mb-3">{item.icon}</div>
             <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
             <p className="text-sm text-gray-500 mb-4">{item.desc}</p>
-            <span className="text-sm font-bold text-pink-500">{item.price}</span>
           </div>
         ))}
       </section>
