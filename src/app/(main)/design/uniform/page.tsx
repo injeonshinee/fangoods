@@ -181,22 +181,17 @@ function FontSelect({ label, value, onChange }: { label: string; value: string; 
   )
 }
 
-function AccordionSection({ title, defaultOpen, children }: {
-  title: string; defaultOpen?: boolean; children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(!!defaultOpen)
+function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <div className="border-b last:border-b-0">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between py-3 text-sm font-semibold"
-      >
-        {title}
-        <span className="text-gray-400 text-base leading-none">{open ? '−' : '+'}</span>
-      </button>
-      {open && <div className="pb-4 space-y-3">{children}</div>}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
+        active ? 'text-pink-500 border-pink-500' : 'text-gray-400 border-transparent hover:text-gray-600'
+      }`}
+    >
+      {label}
+    </button>
   )
 }
 
@@ -256,6 +251,7 @@ export default function UniformPage() {
   const [numberFontFamily, setNumberFontFamily] = useState('arial')
   const [nameTextStrokeWidth, setNameTextStrokeWidth] = useState(0.7)
   const [numberTextStrokeWidth, setNumberTextStrokeWidth] = useState(1.5)
+  const [activeTab, setActiveTab] = useState<'setting' | 'front' | 'back'>('setting')
 
   useEffect(() => {
     fetch('/templates/front.svg').then((r) => r.text()).then(setFrontSvg)
@@ -342,108 +338,117 @@ export default function UniformPage() {
         </div>
 
         <div className="bg-white border rounded-2xl lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-13rem)] flex flex-col">
-        <div className="px-4 overflow-y-auto flex-1 min-h-0">
-          <AccordionSection title="색상" defaultOpen>
+        <div className="flex border-b flex-shrink-0">
+          <TabButton label="세팅" active={activeTab === 'setting'} onClick={() => setActiveTab('setting')} />
+          <TabButton label="앞면" active={activeTab === 'front'} onClick={() => setActiveTab('front')} />
+          <TabButton label="뒷면" active={activeTab === 'back'} onClick={() => setActiveTab('back')} />
+        </div>
+        <div className="px-4 py-4 overflow-y-auto flex-1 min-h-0 space-y-3">
+          {activeTab === 'setting' && (
             <div className="flex flex-wrap gap-4">
               <ColorPicker label="유니폼 색상" value={color} onChange={setColor} />
               <ColorPicker label="유니폼 선 색상" value={strokeColor} onChange={setStrokeColor} />
               <ColorPicker label="글자 색상" value={textColor} onChange={setTextColor} />
               <NullableColorPicker label="글자 외곽선" value={textStrokeColor} onChange={setTextStrokeColor} />
             </div>
-          </AccordionSection>
+          )}
 
-          <AccordionSection title="이름 · 번호" defaultOpen>
-            <div className="grid grid-cols-2 gap-3">
+          {activeTab === 'front' && (
+            <>
               <div>
-                <label className="block text-sm font-medium mb-1">등번호</label>
+                <label className="block text-sm font-medium mb-1">
+                  앞면 로고 <span className="text-gray-400 font-normal text-xs">(선택)</span>
+                </label>
+                <div
+                  onClick={() => logoInputRef.current?.click()}
+                  className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-pink-300 transition-colors"
+                >
+                  {logoDataUrl ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <img src={logoDataUrl} alt="로고" className="h-10 w-10 object-contain" />
+                      <span className="text-sm text-gray-600">{logoFile?.name}</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      클릭하여 로고 이미지 업로드<br />
+                      <span className="text-xs">PNG, JPG, SVG 권장</span>
+                    </p>
+                  )}
+                </div>
                 <input
-                  type="text"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
-                  placeholder="예: 17"
-                  maxLength={2}
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">선수 이름</label>
-                <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
-                  placeholder="예: 이태민"
-                />
-              </div>
-            </div>
-
-            <p className="text-xs font-medium text-gray-500 pt-1">이름</p>
-            <FontSelect label="글씨체" value={nameFontFamily} onChange={setNameFontFamily} />
-            <Slider label="세로 위치" value={nameY} min={15} max={55} step={0.5} onChange={setNameY} />
-            <Slider label="글자 크기" value={nameFontSize} min={6} max={22} step={0.5} onChange={setNameFontSize} />
-            {textStrokeColor && (
-              <Slider label="외곽선 굵기" value={nameTextStrokeWidth} min={0.1} max={3} step={0.1} onChange={setNameTextStrokeWidth} />
-            )}
-
-            <p className="text-xs font-medium text-gray-500 pt-1">번호</p>
-            <FontSelect label="글씨체" value={numberFontFamily} onChange={setNumberFontFamily} />
-            <Slider label="세로 위치" value={numberY} min={30} max={82} step={0.5} onChange={setNumberY} />
-            <Slider label="글자 크기" value={numberFontSize} min={12} max={45} step={1} onChange={setNumberFontSize} />
-            {textStrokeColor && (
-              <Slider label="외곽선 굵기" value={numberTextStrokeWidth} min={0.1} max={3} step={0.1} onChange={setNumberTextStrokeWidth} />
-            )}
-          </AccordionSection>
-
-          <AccordionSection title="로고" defaultOpen>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                앞면 로고 <span className="text-gray-400 font-normal text-xs">(선택)</span>
-              </label>
-              <div
-                onClick={() => logoInputRef.current?.click()}
-                className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-pink-300 transition-colors"
-              >
-                {logoDataUrl ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <img src={logoDataUrl} alt="로고" className="h-10 w-10 object-contain" />
-                    <span className="text-sm text-gray-600">{logoFile?.name}</span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400">
-                    클릭하여 로고 이미지 업로드<br />
-                    <span className="text-xs">PNG, JPG, SVG 권장</span>
-                  </p>
+                {logoDataUrl && (
+                  <button
+                    onClick={() => { setLogoFile(null); setLogoDataUrl(null) }}
+                    className="mt-1 text-xs text-red-400 hover:text-red-600"
+                  >
+                    로고 제거
+                  </button>
                 )}
               </div>
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
-              />
-              {logoDataUrl && (
-                <button
-                  onClick={() => { setLogoFile(null); setLogoDataUrl(null) }}
-                  className="mt-1 text-xs text-red-400 hover:text-red-600"
-                >
-                  로고 제거
-                </button>
-              )}
-            </div>
 
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-medium text-gray-500">위치 · 크기</h3>
-              {!logoDataUrl && <span className="text-xs text-gray-400">(로고 업로드 후 적용돼요)</span>}
-            </div>
-            <Slider
-              label="가로 위치" value={logoX} min={20} max={80} step={0.5} onChange={setLogoX}
-              onReset={() => setLogoX(LOGO_CENTER_X)} resetLabel="중앙 정렬"
-            />
-            <Slider label="세로 위치" value={logoY} min={20} max={85} step={0.5} onChange={setLogoY} />
-            <Slider label="크기" value={logoSize} min={0} max={100} step={1} onChange={setLogoSize} />
-            <p className="text-xs text-gray-400">크기를 조절하면 중심을 기준으로 커지고 작아져요</p>
-          </AccordionSection>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-medium text-gray-500">위치 · 크기</h3>
+                {!logoDataUrl && <span className="text-xs text-gray-400">(로고 업로드 후 적용돼요)</span>}
+              </div>
+              <Slider
+                label="가로 위치" value={logoX} min={20} max={80} step={0.5} onChange={setLogoX}
+                onReset={() => setLogoX(LOGO_CENTER_X)} resetLabel="중앙 정렬"
+              />
+              <Slider label="세로 위치" value={logoY} min={20} max={85} step={0.5} onChange={setLogoY} />
+              <Slider label="크기" value={logoSize} min={0} max={100} step={1} onChange={setLogoSize} />
+              <p className="text-xs text-gray-400">크기를 조절하면 중심을 기준으로 커지고 작아져요</p>
+            </>
+          )}
+
+          {activeTab === 'back' && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">등번호</label>
+                  <input
+                    type="text"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    placeholder="예: 17"
+                    maxLength={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">선수 이름</label>
+                  <input
+                    type="text"
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    placeholder="예: 이태민"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs font-medium text-gray-500 pt-1">이름</p>
+              <FontSelect label="글씨체" value={nameFontFamily} onChange={setNameFontFamily} />
+              <Slider label="세로 위치" value={nameY} min={15} max={55} step={0.5} onChange={setNameY} />
+              <Slider label="글자 크기" value={nameFontSize} min={6} max={22} step={0.5} onChange={setNameFontSize} />
+              {textStrokeColor && (
+                <Slider label="외곽선 굵기" value={nameTextStrokeWidth} min={0.1} max={3} step={0.1} onChange={setNameTextStrokeWidth} />
+              )}
+
+              <p className="text-xs font-medium text-gray-500 pt-1">번호</p>
+              <FontSelect label="글씨체" value={numberFontFamily} onChange={setNumberFontFamily} />
+              <Slider label="세로 위치" value={numberY} min={30} max={82} step={0.5} onChange={setNumberY} />
+              <Slider label="글자 크기" value={numberFontSize} min={12} max={45} step={1} onChange={setNumberFontSize} />
+              {textStrokeColor && (
+                <Slider label="외곽선 굵기" value={numberTextStrokeWidth} min={0.1} max={3} step={0.1} onChange={setNumberTextStrokeWidth} />
+              )}
+            </>
+          )}
         </div>
 
           <div className="px-4 py-4 space-y-3 border-t flex-shrink-0">
